@@ -8,7 +8,7 @@ import { config as dotenvConfig } from "dotenv";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-dotenvConfig({ path: join(dirname(fileURLToPath(import.meta.url)), "..", ".env") });
+dotenvConfig({ path: join(dirname(fileURLToPath(import.meta.url)), "..", ".env"), quiet: true });
 
 const ITAD_BASE_URL = "https://api.isthereanydeal.com";
 const API_KEY_ENV_NAMES = ["ITAD_API_KEY", "ISTHEREANYDEAL_API_KEY", "APIKEY", "apikey"];
