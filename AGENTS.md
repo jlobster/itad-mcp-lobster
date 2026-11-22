@@ -93,7 +93,7 @@ Copy `.env.example` to `.env` and populate as needed. `.env` is loaded from the 
   "mcpServers": {
     "isthereanydeal": {
       "command": "node",
-      "args": ["/path/to/itad-mcp/src/index.js"],
+      "args": ["/path/to/itad-mcp-lobster/src/index.js"],
       "env": {
         "ITAD_API_KEY": "your_api_key"
       }

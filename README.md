@@ -44,8 +44,8 @@ The server also exposes two MCP Resources so agents that can't read repository f
 ## Installation
 
 ```bash
-git clone https://github.com/jlobster/itad-mcp.git
-cd itad-mcp
+git clone https://github.com/jlobster/itad-mcp-lobster.git
+cd itad-mcp-lobster
 pnpm install
 pwd   # copy this path — you'll need it for the MCP client config
 ```
@@ -84,9 +84,9 @@ ITAD supports the **authorization code flow with PKCE**. Steps:
    ```
 3. Open this URL in your browser, substituting your Client ID and the **challenge**:
    ```
-   https://isthereanydeal.com/oauth/authorize/?client_id=YOUR_CLIENT_ID&response_type=code&redirect_uri=http://localhost&code_challenge=YOUR_CHALLENGE&code_challenge_method=S256&state=itad-mcp&scope=user_info%20notifications%20notes_read%20notes_write%20wait_read%20wait_write%20coll_read%20coll_write%20ignored_read%20ignored_write%20profiles%20webhooks
+   https://isthereanydeal.com/oauth/authorize/?client_id=YOUR_CLIENT_ID&response_type=code&redirect_uri=http://localhost&code_challenge=YOUR_CHALLENGE&code_challenge_method=S256&state=itad-mcp-lobster&scope=user_info%20notifications%20notes_read%20notes_write%20wait_read%20wait_write%20coll_read%20coll_write%20ignored_read%20ignored_write%20profiles%20webhooks
    ```
-4. Authorize the app. ITAD redirects to `http://localhost/?code=...&state=itad-mcp`. The page won't load, but the URL bar holds the **code**. Copy it right away, because codes expire quickly.
+4. Authorize the app. ITAD redirects to `http://localhost/?code=...&state=itad-mcp-lobster`. The page won't load, but the URL bar holds the **code**. Copy it right away, because codes expire quickly.
 5. Exchange the code for tokens, substituting your Client ID, the code and the **verifier**:
    ```bash
    curl -X POST https://isthereanydeal.com/oauth/token/      -d grant_type=authorization_code      -d client_id=YOUR_CLIENT_ID      -d redirect_uri=http://localhost      -d code=YOUR_CODE      -d code_verifier=YOUR_VERIFIER
@@ -161,7 +161,7 @@ The server communicates with MCP clients over stdio. You normally don't start it
   "mcpServers": {
     "isthereanydeal": {
       "command": "node",
-      "args": ["/path/to/itad-mcp/src/index.js"]
+      "args": ["/path/to/itad-mcp-lobster/src/index.js"]
     }
   }
 }

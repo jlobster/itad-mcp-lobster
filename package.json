@@ -17,6 +17,14 @@
     "itad"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jlobster/itad-mcp-lobster.git"
+  },
+  "homepage": "https://github.com/jlobster/itad-mcp-lobster#readme",
+  "bugs": {
+    "url": "https://github.com/jlobster/itad-mcp-lobster/issues"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
     "dotenv": "^18.0.10",
