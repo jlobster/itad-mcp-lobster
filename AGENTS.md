@@ -24,7 +24,7 @@ npm still works for users (`npm install`, `npm start`), and `package-lock.json` 
 The server speaks MCP over **stdio**, so stdout carries the protocol stream. Any stray write to stdout (`console.log`, a library banner, etc.) corrupts the transport and breaks the client connection.
 
 - Use `console.error` for diagnostics.
-- Keep `quiet: true` on the `dotenvConfig(...)` call: dotenv 17+ logs to stdout by default (fixed in commit `5c351f0`).
+- Keep `quiet: true` on the `dotenvConfig(...)` call. dotenv 17 logged to stdout by default (fixed in commit `5c351f0`); dotenv 18 logs to stderr, but keep the server silent anyway.
 - When adding a dependency, check that it does not print to stdout on import or init.
 
 ## Architecture
@@ -37,13 +37,13 @@ This is a single-file MCP server (`src/index.js`) that wraps the entire IsThereA
 MCP Client → tool call → ensureRequiredValues() → applyAuth() → itadRequest() → ITAD REST API
 ```
 
-1. **Tool registration** — The `ENDPOINTS` array drives everything. Each entry has `{ tool, method, path, summary, auth }`. `ACTIVE_ENDPOINTS` filters out `/internal/*` paths unless `ITAD_ENABLE_INTERNAL_TOOLS` is set, and a `for` loop at the bottom registers those tools using `buildToolInputSchema()` and `buildToolDescription()`.
+1. **Tool registration** — The `ENDPOINTS` array drives everything. Tools are registered with `server.registerTool()`, including MCP annotations from `buildToolAnnotations()` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), and write/destructive tools get a safety note in their description. Each entry has `{ tool, method, path, summary, auth }`. `ACTIVE_ENDPOINTS` filters out `/internal/*` paths unless `ITAD_ENABLE_INTERNAL_TOOLS` is set, and a `for` loop at the bottom registers those tools using `buildToolInputSchema()` and `buildToolDescription()`.
 
 2. **Input schema** — All tools share the same five fields: `pathParams`, `query`, `headers`, `body`, `oauthToken`. `key_or_oauth` tools add a sixth, `useOAuth`. Required fields are enforced at runtime (not via Zod `.required()`) by `ensureRequiredValues()`, using three lookup maps (`REQUIRED_QUERY_PARAMS`, `REQUIRED_HEADER_PARAMS`, `REQUIRED_PATH_PARAMS`) and the set `BODY_REQUIRED_TOOLS`.
 
-3. **Auth** — `applyAuth()` sends the API key as the `ITAD-API-Key` header (never the `key` query param, so it stays out of URLs) or an `Authorization: Bearer` header (oauth). Credentials are read from env vars at request time, not at startup.
+3. **Auth** — Any caller-supplied `key` query param is stripped first (`stripCredentialQueryParams()`). `applyAuth()` sends the API key as the `ITAD-API-Key` header (never the `key` query param, so it stays out of URLs) or an `Authorization: Bearer` header (oauth). Credentials are read from env vars at request time, not at startup.
 
-4. **HTTP** — `itadRequest()` uses `fetch` for all methods except GET/HEAD with a body (which WHATWG fetch rejects). That edge case uses `node:http`/`node:https` directly; it serves `internal_exfgls_v1` (body required) and `deals_v2` (body optional). On a 429 the error message includes ITAD's `Retry-After` value.
+4. **HTTP** — `itadRequest()` uses `fetch` for all methods except GET/HEAD with a body (which WHATWG fetch rejects). That edge case uses `node:http`/`node:https` directly; it serves `internal_exfgls_v1` (body required) and `deals_v2` (body optional). On a 429 the error message includes ITAD's `Retry-After` value. Every request has a timeout (`ITAD_REQUEST_TIMEOUT_MS`, default 30000).
 
 5. **MCP Resources** — Two resources are registered for agent discoverability:
    - `itad://guide/calling` — Markdown human-readable calling guide
@@ -64,6 +64,7 @@ All changes flow from the `ENDPOINTS` array plus the four constraint collections
 1. Add an entry to `ENDPOINTS`
 2. If it has required params, add to the relevant map (`REQUIRED_QUERY_PARAMS`, etc.)
 3. If the body is required, add the tool name to `BODY_REQUIRED_TOOLS`
+4. Classify it for the MCP safety annotations: GETs are read-only automatically. A POST that only queries goes in `READ_ONLY_NON_GET_TOOLS`. DELETEs are destructive automatically; any other write that overwrites, replaces or sends account data off-site goes in `DESTRUCTIVE_NON_DELETE_TOOLS`. A write that creates duplicates when repeated goes in `NON_IDEMPOTENT_WRITE_TOOLS`. Getting this wrong means clients won't ask the user before a risky call
 
 No other registration code is needed — the loop handles the rest. If the tool count changes, update the counts in this file, `README.md` (including its generated tool list) and `docs/CALLING_GUIDE.md`. The calling-guide resource and the server version (`package.json`) are computed at runtime.
 
@@ -83,6 +84,7 @@ Copy `.env.example` to `.env` and populate as needed. `.env` is loaded from the 
 - `ITAD_API_KEY` (recommended) or `ISTHEREANYDEAL_API_KEY` / `APIKEY` / `apikey` — for key-auth endpoints
 - `ITAD_OAUTH_TOKEN` or `ISTHEREANYDEAL_OAUTH_TOKEN` — for oauth endpoints (and the deals tools in OAuth mode)
 - `ITAD_ENABLE_INTERNAL_TOOLS` — `true`/`1`/`yes`/`on` registers the 8 internal tools. Read once at startup; off by default
+- `ITAD_REQUEST_TIMEOUT_MS` — per-request timeout in ms (default 30000). Read once at startup
 
 ## MCP client config example
 

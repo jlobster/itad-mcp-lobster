@@ -167,6 +167,14 @@ The server communicates with MCP clients over stdio. You normally don't start it
 
 The server loads credentials from the `.env` file in the project root automatically — no `env` block needed. If you prefer to set credentials as OS-level user environment variables instead of a `.env` file, those work too and take precedence.
 
+## Security
+
+- **Tool safety annotations.** Every tool declares MCP annotations: `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`. Clients that honor them can ask before risky calls. 43 tools are read-only. 8 make additive account changes, such as adding to the waitlist. 14 are destructive: every delete, plus updates that overwrite data, profile syncs and `webhooks_add_v1`. Write and destructive tools also carry a warning in their description. The full breakdown is in [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md#3-tool-safety-annotations).
+- **Prompt injection.** Tool results contain third-party text: game titles, giveaway descriptions, your own notes. Text like that could try to steer the agent into calling a write tool. The riskiest is `webhooks_add_v1`, which would send your ITAD notifications to whatever URL it's given. If your client lets you, require approval for non-read-only tools. Don't give an agent your OAuth token if it only needs prices and deals.
+- **Credentials stay out of URLs.** The API key is sent as the `ITAD-API-Key` header. Any `key` query param a caller passes is dropped.
+- **Prefer env vars for the OAuth token.** Tools accept an `oauthToken` argument, but anything passed that way is visible in the conversation transcript and client logs. Set `ITAD_OAUTH_TOKEN` instead.
+- **Request timeout.** Each call to ITAD is aborted after 30 seconds by default. To change it, set `ITAD_REQUEST_TIMEOUT_MS`.
+
 ## Internal endpoints (opt-in)
 
 The ITAD spec includes 8 `/internal/*` endpoints. ITAD's docs say internal APIs "are available only for our own services" and are "documented here for the sake of completeness". This server therefore **does not register them by default**. To expose them, set this in `.env` or your MCP client's `env` block, then restart the server:

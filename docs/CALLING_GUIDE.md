@@ -20,10 +20,10 @@ All tools share the same input schema:
 Field descriptions:
 
 - `pathParams`: Path parameters, e.g. `shopId` in `/lookup/id/shop/{shopId}/v1`
-- `query`: Query string parameters
+- `query`: Query string parameters. A `key` param is always dropped; the API key is sent as a header
 - `headers`: Request headers (e.g. `ITAD-Profile`)
 - `body`: Request body (object or array)
-- `oauthToken`: OAuth token (`oauth` and `key_or_oauth` endpoints; can also be set via environment variable)
+- `oauthToken`: OAuth token (`oauth` and `key_or_oauth` endpoints). Prefer the environment variable: a token passed here is visible in the conversation transcript and client logs
 - `useOAuth`: `key_or_oauth` endpoints only (`deals_v2`, `deals_post_v2`). `true` = authenticate with OAuth instead of the API key
 
 > Only populate the fields required by the endpoint — unused fields can be omitted.
@@ -51,7 +51,17 @@ OAuth environment variables (any one):
 
 ---
 
-## 3. Response and Error Format
+## 3. Tool Safety Annotations
+
+Every tool carries MCP annotations that clients can use to ask for confirmation:
+
+- **Read-only** (`readOnlyHint: true`, 43 tools): all GETs, plus the query-style POSTs (`deals_post_v2`, `games_prices_v3`, `games_overview_v2`, `games_historylow_v1`, `games_storelow_v2`, `games_subscriptions_v1`, and the three `lookup_*` tools)
+- **Write** (`readOnlyHint: false`, `destructiveHint: false`, 8 tools): additive changes, e.g. `waitlist_games_v1_put`, `collection_games_v1_put`, `collection_copies_v1_post`, `notifications_read_v1_put`
+- **Destructive** (`destructiveHint: true`, 14 tools): every DELETE, plus `collection_copies_v1_patch`, `collection_groups_v1_patch`, `user_notes_v1_put`, `profiles_sync_collection_v1_put`, `profiles_sync_waitlist_v1_put` and `webhooks_add_v1`, which sends the user's notifications to an external URL
+
+All tools have `openWorldHint: true`, since they call the ITAD API. Counts include the internal tools, which are all read-only.
+
+## 4. Response and Error Format
 
 On success, MCP returns:
 
@@ -76,9 +86,9 @@ On failure, MCP returns:
 
 ---
 
-## 4. Example Calls
+## 5. Example Calls
 
-### 4.1 Query Bundles Containing a Game
+### 5.1 Query Bundles Containing a Game
 
 tool: `games_bundles_v2`  
 endpoint: `GET /games/bundles/v2`  
@@ -95,7 +105,7 @@ required: `query.id`
 }
 ```
 
-### 4.2 Search for a Game
+### 5.2 Search for a Game
 
 tool: `games_search_v1`  
 endpoint: `GET /games/search/v1`  
@@ -111,7 +121,7 @@ required: `query.title`
 }
 ```
 
-### 4.3 Batch Price Query
+### 5.3 Batch Price Query
 
 tool: `games_prices_v3`  
 endpoint: `POST /games/prices/v3`  
@@ -132,7 +142,7 @@ required: `body`
 }
 ```
 
-### 4.4 Reverse Shop ID Lookup (with path parameter)
+### 5.4 Reverse Shop ID Lookup (with path parameter)
 
 tool: `lookup_gid_shopid_v1`  
 endpoint: `POST /lookup/id/shop/{shopId}/v1`  
@@ -151,19 +161,19 @@ required: `pathParams.shopId`, `body`
 }
 ```
 
-### 4.5 OAuth Endpoint Example (Get User Info)
+### 5.5 OAuth Endpoint Example (Get User Info)
 
 tool: `user_info_v2`  
 endpoint: `GET /user/info/v2`  
 auth: `oauth`
 
 ```json
-{
-  "oauthToken": "your_oauth_token"
-}
+{}
 ```
 
-### 4.6 Query Game Info (`games_info_v2`)
+The token comes from `ITAD_OAUTH_TOKEN`. Passing `"oauthToken": "..."` also works, but it puts the token in the transcript, so reserve it for a deliberate one-off account switch.
+
+### 5.6 Query Game Info (`games_info_v2`)
 
 tool: `games_info_v2`  
 endpoint: `GET /games/info/v2`  
@@ -182,7 +192,7 @@ required: `query.id`
 
 ---
 
-## 5. Full Tool List with Required Parameters
+## 6. Full Tool List with Required Parameters
 
 ### Bundles / Deals / Games / Lookup / Service / Stats / Internal / Unstable (API Key / none)
 
@@ -263,7 +273,7 @@ required: `query.id`
 
 ---
 
-## 6. Common Errors
+## 7. Common Errors
 
 - `missing required query/path/header parameter`: Supply the missing field per the docs above
 - `requires a request body`: This endpoint must receive a body
@@ -271,4 +281,5 @@ required: `query.id`
 - `requires an OAuth Token`: Pass `oauthToken` or set an OAuth env var
 - `requires an API Key or an OAuth Token`: a `key_or_oauth` tool found neither credential
 - `ITAD API request failed (429 ...): Rate limited by ITAD; retry after N seconds`: wait for the `Retry-After` time given. The documented limit is 1000 requests per 5-minute window, so cache results where possible
+- `ITAD API request timed out after N ms`: ITAD didn't answer in time. Retry, or raise `ITAD_REQUEST_TIMEOUT_MS`
 - `ITAD API request failed (4xx/5xx)`: Upstream error or invalid parameters — check the response text
