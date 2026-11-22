@@ -28,7 +28,8 @@ $RECYCLE.BIN/
 .Trash-*
 .nfs*
 
-# Claude artifacts
-CLAUDE.md
+# Agent / personal tooling artifacts (AGENTS.md and CLAUDE.md are tracked)
+CLAUDE.local.md
 .claude/
 WorkingDir/
+skill-observations/

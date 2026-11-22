@@ -1,11 +1,11 @@
 {
-  "name": "itad-mcp",
-  "version": "0.1.0",
+  "name": "itad-mcp-lobster",
+  "version": "0.2.0",
   "description": "MCP server for IsThereAnyDeal API",
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "itad-mcp": "./src/index.js"
+    "itad-mcp-lobster": "./src/index.js"
   },
   "scripts": {
     "start": "node src/index.js",
@@ -17,9 +17,17 @@
     "itad"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jlobster/itad-mcp-lobster.git"
+  },
+  "homepage": "https://github.com/jlobster/itad-mcp-lobster#readme",
+  "bugs": {
+    "url": "https://github.com/jlobster/itad-mcp-lobster/issues"
+  },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.1",
-    "dotenv": "^17.4.2",
-    "zod": "^4.3.6"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "dotenv": "^18.0.10",
+    "zod": "^4.6.7"
   }
 }
