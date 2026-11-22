@@ -1,11 +1,11 @@
 {
-  "name": "itad-mcp",
+  "name": "itad-mcp-lobster",
   "version": "0.2.0",
   "description": "MCP server for IsThereAnyDeal API",
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "itad-mcp": "./src/index.js"
+    "itad-mcp-lobster": "./src/index.js"
   },
   "scripts": {
     "start": "node src/index.js",

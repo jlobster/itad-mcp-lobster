@@ -1,4 +1,4 @@
-# itad-mcp
+# itad-mcp-lobster
 
 An MCP (Model Context Protocol) server for the IsThereAnyDeal API.
 
@@ -60,7 +60,7 @@ Both the API key and OAuth client ID come from the same app registration at <htt
 
 When creating the app:
 
-- **App Name** — required; any name you like (e.g. `itad-mcp`)
+- **App Name** — required; any name you like (e.g. `itad-mcp-lobster`)
 - **Description** — optional
 - **OAuth — app type** — select **"This app will NOT store OAuth secret securely"** (a local tool can't keep a client secret; the PKCE flow below doesn't need one)
 - **Redirect URI** — set to `http://localhost`
@@ -150,7 +150,7 @@ pnpm start
 
 With npm: `npm start`. Either one runs `node src/index.js`.
 
-> Don't use `npx itad-mcp`. The npm package name `itad-mcp` belongs to a different, unrelated project, so npx would download and run that package instead of this repo. Point your MCP client at `src/index.js` as shown below.
+> This package is named `itad-mcp-lobster`. Don't use `npx itad-mcp`: that npm name belongs to a different, unrelated project, so npx would download and run that package instead. `itad-mcp-lobster` isn't published to npm, so point your MCP client at `src/index.js` as shown below.
 
 The server communicates with MCP clients over stdio. You normally don't start it by hand: your MCP client launches it using the config below.
 

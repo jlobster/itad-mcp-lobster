@@ -15,7 +15,7 @@ pnpm add <pkg>       # add a dependency (never hand-edit package.json versions)
 
 There is no test suite and no linter configured. The only verification step is `pnpm run check`.
 
-Run the server with `pnpm start` or `node src/index.js`. Never document or use `npx itad-mcp` / `pnpm exec itad-mcp`: the package's own `bin` isn't linked into `node_modules/.bin`, and the npm name `itad-mcp` belongs to an unrelated published package, so npx would run that instead.
+The package is named **`itad-mcp-lobster`** (renamed from `itad-mcp`, whose npm name belongs to an unrelated published package). Run the server with `pnpm start` or `node src/index.js`. Never document `npx` or `pnpm exec` for this package: it isn't published, its own `bin` isn't linked into `node_modules/.bin`, and `npx itad-mcp` would run the other project.
 
 npm still works for users (`npm install`, `npm start`), and `package-lock.json` is kept for them. If you change dependencies, regenerate both lockfiles: `pnpm install`, then `npm install --package-lock-only`.
 

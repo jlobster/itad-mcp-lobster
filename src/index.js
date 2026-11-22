@@ -644,7 +644,7 @@ function buildCallingGuideMarkdown(metadata) {
 }
 
 const server = new McpServer({
-  name: "itad-mcp",
+  name: "itad-mcp-lobster",
   version: PACKAGE_VERSION,
 });
 
