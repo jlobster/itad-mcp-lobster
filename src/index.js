@@ -7,12 +7,28 @@ import { z } from "zod";
 import { config as dotenvConfig } from "dotenv";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
 
-dotenvConfig({ path: join(dirname(fileURLToPath(import.meta.url)), "..", ".env"), quiet: true });
+const PROJECT_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+// quiet: true is mandatory: dotenv 17+ logs to stdout, which corrupts the MCP stdio transport.
+dotenvConfig({ path: join(PROJECT_ROOT, ".env"), quiet: true });
+
+const PACKAGE_VERSION = JSON.parse(readFileSync(join(PROJECT_ROOT, "package.json"), "utf8")).version;
 
 const ITAD_BASE_URL = "https://api.isthereanydeal.com";
+const API_KEY_HEADER = "ITAD-API-Key";
 const API_KEY_ENV_NAMES = ["ITAD_API_KEY", "ISTHEREANYDEAL_API_KEY", "APIKEY", "apikey"];
 const OAUTH_TOKEN_ENV_NAMES = ["ITAD_OAUTH_TOKEN", "ISTHEREANYDEAL_OAUTH_TOKEN"];
+
+// ITAD documents /internal/* endpoints as "available only for our own services".
+// They are registered only when this env var is truthy (read once at startup).
+const INTERNAL_TOOLS_ENV_NAME = "ITAD_ENABLE_INTERNAL_TOOLS";
+const INTERNAL_TOOLS_ENABLED = /^(1|true|yes|on)$/i.test(process.env[INTERNAL_TOOLS_ENV_NAME]?.trim() ?? "");
+
+function isInternalEndpoint(endpoint) {
+  return endpoint.path.startsWith("/internal/");
+}
 
 const ENDPOINTS = [
   { tool: "bundles_v1", method: "GET", path: "/bundles/v1", summary: "Bundle List", auth: "key" },
@@ -27,9 +43,10 @@ const ENDPOINTS = [
   { tool: "collection_groups_v1_get", method: "GET", path: "/collection/groups/v1", summary: "Get all Categories", auth: "oauth" },
   { tool: "collection_groups_v1_patch", method: "PATCH", path: "/collection/groups/v1", summary: "Update Categories", auth: "oauth" },
   { tool: "collection_groups_v1_post", method: "POST", path: "/collection/groups/v1", summary: "Create new Category", auth: "oauth" },
-  { tool: "deals_post_v2", method: "POST", path: "/deals/v2", summary: "Deals List", auth: "key" },
-  { tool: "deals_v2", method: "GET", path: "/deals/v2", summary: "Deals List", auth: "key" },
+  { tool: "deals_post_v2", method: "POST", path: "/deals/v2", summary: "Deals List", auth: "key_or_oauth" },
+  { tool: "deals_v2", method: "GET", path: "/deals/v2", summary: "Deals List", auth: "key_or_oauth" },
   { tool: "games_bundles_v2", method: "GET", path: "/games/bundles/v2", summary: "Bundles including Game", auth: "key" },
+  { tool: "games_giveaways_v1", method: "GET", path: "/games/giveaways/v1", summary: "Giveaways with Game", auth: "key" },
   { tool: "games_history_v2", method: "GET", path: "/games/history/v2", summary: "History log", auth: "key" },
   { tool: "games_historylow_v1", method: "POST", path: "/games/historylow/v1", summary: "History Low", auth: "key" },
   { tool: "games_info_v2", method: "GET", path: "/games/info/v2", summary: "Game Info", auth: "key" },
@@ -39,6 +56,7 @@ const ENDPOINTS = [
   { tool: "games_search_v1", method: "GET", path: "/games/search/v1", summary: "Search", auth: "key" },
   { tool: "games_storelow_v2", method: "POST", path: "/games/storelow/v2", summary: "Store Low", auth: "key" },
   { tool: "games_subscriptions_v1", method: "POST", path: "/games/subs/v1", summary: "Game Subscriptions", auth: "key" },
+  { tool: "giveaways_v1", method: "GET", path: "/giveaways/v1", summary: "Giveaways List", auth: "key" },
   { tool: "internal_earlyaccess_v1", method: "GET", path: "/internal/early-access/v1", summary: "Early Access Games", auth: "key" },
   { tool: "internal_exfgls_v1", method: "GET", path: "/internal/exfgls/v1", summary: "Excluded from Family Sharing", auth: "key" },
   { tool: "internal_hltb_v1", method: "GET", path: "/internal/hltb/v1", summary: "HowLongToBeat Overview", auth: "key" },
@@ -47,9 +65,9 @@ const ENDPOINTS = [
   { tool: "internal_reviews_v1", method: "GET", path: "/internal/reviews/v1", summary: "Reviews Score", auth: "key" },
   { tool: "internal_twitchstream_v1", method: "GET", path: "/internal/twitch/stream/v1", summary: "Current stream of Twitch channel", auth: "key" },
   { tool: "internal_wsgf_v1", method: "GET", path: "/internal/wsgf/v1", summary: "WSGF Overview", auth: "key" },
-  { tool: "lookup_gid_shopid_v1", method: "POST", path: "/lookup/id/shop/{shopId}/v1", summary: "Lookup ITAD game IDs by IDs on shop", auth: "optional_key" },
-  { tool: "lookup_gid_title_v1", method: "POST", path: "/lookup/id/title/v1", summary: "Lookup ITAD game IDs by title", auth: "optional_key" },
-  { tool: "lookup_shopid_gid_v1", method: "POST", path: "/lookup/shop/{shopId}/id/v1", summary: "Lookup game IDs on shop by ITAD game IDs", auth: "optional_key" },
+  { tool: "lookup_gid_shopid_v1", method: "POST", path: "/lookup/id/shop/{shopId}/v1", summary: "Lookup ITAD game IDs by IDs on shop", auth: "key" },
+  { tool: "lookup_gid_title_v1", method: "POST", path: "/lookup/id/title/v1", summary: "Lookup ITAD game IDs by title", auth: "key" },
+  { tool: "lookup_shopid_gid_v1", method: "POST", path: "/lookup/shop/{shopId}/id/v1", summary: "Lookup game IDs on shop by ITAD game IDs", auth: "key" },
   { tool: "ignored_games_v1_delete", method: "DELETE", path: "/ignored/games/v1", summary: "Delete from Ignore List", auth: "oauth" },
   { tool: "ignored_games_v1_get", method: "GET", path: "/ignored/games/v1", summary: "Games in Ignore List", auth: "oauth" },
   { tool: "ignored_games_v1_put", method: "PUT", path: "/ignored/games/v1", summary: "Add to Ignore List", auth: "oauth" },
@@ -82,6 +100,7 @@ const ENDPOINTS = [
 
 const REQUIRED_QUERY_PARAMS = {
   games_bundles_v2: ["id"],
+  games_giveaways_v1: ["id"],
   games_history_v2: ["id"],
   games_info_v2: ["id"],
   games_search_v1: ["title"],
@@ -107,7 +126,6 @@ const REQUIRED_PATH_PARAMS = {
 };
 
 const BODY_REQUIRED_TOOLS = new Set([
-  "deals_post_v2",
   "collection_copies_v1_delete",
   "collection_copies_v1_patch",
   "collection_copies_v1_post",
@@ -235,32 +253,57 @@ function ensureRequiredValues(tool, input) {
   }
 }
 
-function applyAuth(endpoint, query, headers, oauthToken) {
+function requireApiKey(endpoint) {
   const apiKey = getFirstEnv(API_KEY_ENV_NAMES);
-
-  if (endpoint.auth === "key") {
-    if (!apiKey) {
-      throw new Error(`Tool ${endpoint.tool} requires an API Key. Set one of these environment variables: ${API_KEY_ENV_NAMES.join(", ")}`);
-    }
-
-    query.key = apiKey;
-    return;
+  if (!apiKey) {
+    throw new Error(`Tool ${endpoint.tool} requires an API Key. Set one of these environment variables: ${API_KEY_ENV_NAMES.join(", ")}`);
   }
+  return apiKey;
+}
 
-  if (endpoint.auth === "optional_key") {
-    if (apiKey) {
-      query.key = apiKey;
-    }
+function requireOAuthToken(endpoint, oauthToken) {
+  const token = oauthToken?.trim() || getFirstEnv(OAUTH_TOKEN_ENV_NAMES);
+  if (!token) {
+    throw new Error(`Tool ${endpoint.tool} requires an OAuth Token. Pass oauthToken or set one of these environment variables: ${OAUTH_TOKEN_ENV_NAMES.join(", ")}`);
+  }
+  return token;
+}
+
+// The API key is sent as the ITAD-API-Key header (supported since API 2.9) rather than the
+// `key` query param, so it never appears in request URLs.
+function applyAuth(endpoint, headers, { oauthToken, useOAuth } = {}) {
+  if (endpoint.auth === "key") {
+    headers[API_KEY_HEADER] = requireApiKey(endpoint);
     return;
   }
 
   if (endpoint.auth === "oauth") {
-    const token = oauthToken?.trim() || getFirstEnv(OAUTH_TOKEN_ENV_NAMES);
-    if (!token) {
-      throw new Error(`Tool ${endpoint.tool} requires an OAuth Token. Pass oauthToken or set one of these environment variables: ${OAUTH_TOKEN_ENV_NAMES.join(", ")}`);
+    headers.Authorization = `Bearer ${requireOAuthToken(endpoint, oauthToken)}`;
+    return;
+  }
+
+  if (endpoint.auth === "key_or_oauth") {
+    // OAuth is used when explicitly requested (useOAuth or an oauthToken argument) — it enables
+    // user-specific filters such as "in Waitlist". Otherwise prefer the API key, and fall back to
+    // an env OAuth token only when no key is configured.
+    const wantsOAuth = useOAuth === true || Boolean(oauthToken?.trim());
+    const apiKey = getFirstEnv(API_KEY_ENV_NAMES);
+
+    if (wantsOAuth || !apiKey) {
+      const token = oauthToken?.trim() || getFirstEnv(OAUTH_TOKEN_ENV_NAMES);
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+        return;
+      }
+      if (wantsOAuth) {
+        requireOAuthToken(endpoint, oauthToken); // throws with the standard message
+      }
+      throw new Error(
+        `Tool ${endpoint.tool} requires an API Key or an OAuth Token. Set one of ${API_KEY_ENV_NAMES.join(", ")} or ${OAUTH_TOKEN_ENV_NAMES.join(", ")}`
+      );
     }
 
-    headers.Authorization = `Bearer ${token}`;
+    headers[API_KEY_HEADER] = apiKey;
   }
 }
 
@@ -293,10 +336,11 @@ async function itadRequest(path, options = {}) {
   let status;
   let statusText;
   let rawText;
+  let retryAfter;
 
   if ((method === "GET" || method === "HEAD") && bodyText !== undefined) {
-    // The ITAD internal endpoint internal/exfgls/v1 is defined in the OpenAPI spec as GET with a required body.
-    // WHATWG fetch rejects this combination, so we fall back to raw node:http(s) requests for compatibility.
+    // Some ITAD GET endpoints take a body (internal/exfgls/v1 requires one; deals/v2 accepts one).
+    // WHATWG fetch rejects GET/HEAD with a body, so we fall back to raw node:http(s) requests.
     const requestFn = url.startsWith("https:") ? httpsRequest : httpRequest;
     const rawResponse = await new Promise((resolve, reject) => {
       const req = requestFn(url, { method, headers: requestInit.headers }, (res) => {
@@ -307,6 +351,7 @@ async function itadRequest(path, options = {}) {
             status: res.statusCode ?? 0,
             statusText: res.statusMessage ?? "",
             rawText: Buffer.concat(chunks).toString("utf8"),
+            retryAfter: res.headers["retry-after"],
           });
         });
       });
@@ -319,11 +364,13 @@ async function itadRequest(path, options = {}) {
     status = rawResponse.status;
     statusText = rawResponse.statusText;
     rawText = rawResponse.rawText;
+    retryAfter = rawResponse.retryAfter;
   } else {
     const response = await fetch(url, requestInit);
     status = response.status;
     statusText = response.statusText;
     rawText = await response.text();
+    retryAfter = response.headers.get("retry-after") ?? undefined;
   }
 
   let parsed;
@@ -334,9 +381,19 @@ async function itadRequest(path, options = {}) {
   }
 
   if (status < 200 || status >= 300) {
-    throw new Error(
-      `ITAD API request failed (${status} ${statusText}): ${typeof parsed === "string" ? parsed : JSON.stringify(parsed)}`
-    );
+    const detail = typeof parsed === "string" ? parsed : JSON.stringify(parsed);
+    // On 429 ITAD sends Retry-After (seconds or an HTTP date); surface it so the caller can back off.
+    let retryHint = "";
+    if (status === 429) {
+      const value = retryAfter ? String(retryAfter).trim() : "";
+      const when = !value
+        ? "the current rate-limit window ends (no Retry-After header sent)"
+        : /^\d+$/.test(value)
+          ? `${value} seconds`
+          : value;
+      retryHint = ` Rate limited by ITAD; retry after ${when}.`;
+    }
+    throw new Error(`ITAD API request failed (${status} ${statusText}):${retryHint} ${detail}`);
   }
 
   return parsed;
@@ -364,14 +421,17 @@ function buildToolDescription(endpoint) {
   let authHint = "No auth required";
   if (endpoint.auth === "key") {
     authHint = `Requires API Key (env: ${API_KEY_ENV_NAMES.join(", ")})`;
-  } else if (endpoint.auth === "optional_key") {
-    authHint = `Optional API Key (env: ${API_KEY_ENV_NAMES.join(", ")})`;
+  } else if (endpoint.auth === "key_or_oauth") {
+    authHint = `Uses API Key (env: ${API_KEY_ENV_NAMES.join(", ")}) or OAuth Token; set useOAuth=true or pass oauthToken to use OAuth, which enables user filters such as in-Waitlist / in-Collection (scopes wait_read, coll_read)`;
   } else if (endpoint.auth === "oauth") {
     authHint = `Requires OAuth Token (oauthToken param or env: ${OAUTH_TOKEN_ENV_NAMES.join(", ")})`;
   }
 
+  const internalNote = isInternalEndpoint(endpoint)
+    ? " INTERNAL: ITAD documents this endpoint as available only for its own services; expect it to be rejected or to change without notice."
+    : "";
   const requiredText = required.length ? `Required: ${required.join(" | ")}` : "No additional required parameters";
-  return `[${endpoint.method}] ${endpoint.path} - ${endpoint.summary}. ${requiredText}. ${authHint}. Read the itad://guide/calling resource for full usage documentation.`;
+  return `[${endpoint.method}] ${endpoint.path} - ${endpoint.summary}. ${requiredText}. ${authHint}.${internalNote} Read the itad://guide/calling resource for full usage documentation.`;
 }
 
 function buildNamedObjectSchema(requiredKeys, valueSchema, description) {
@@ -395,7 +455,7 @@ function buildToolInputSchema(endpoint) {
   const requiredQueryParams = REQUIRED_QUERY_PARAMS[endpoint.tool] ?? [];
   const requiredHeaders = REQUIRED_HEADER_PARAMS[endpoint.tool] ?? [];
 
-  return {
+  const schema = {
     pathParams: buildNamedObjectSchema(
       requiredPathParams,
       primitiveValueSchema,
@@ -407,7 +467,7 @@ function buildToolInputSchema(endpoint) {
       ? z.any().describe("Request body (required for this endpoint)")
       : z.any().optional().describe("Request body (optional)"),
     oauthToken:
-      endpoint.auth === "oauth"
+      endpoint.auth === "oauth" || endpoint.auth === "key_or_oauth"
         ? z
             .string()
             .optional()
@@ -416,11 +476,23 @@ function buildToolInputSchema(endpoint) {
             )
         : z.string().optional().describe("OAuth token (ignored for non-OAuth endpoints)"),
   };
+
+  if (endpoint.auth === "key_or_oauth") {
+    schema.useOAuth = z
+      .boolean()
+      .optional()
+      .describe(
+        `Authenticate with the OAuth token (oauthToken param or env ${OAUTH_TOKEN_ENV_NAMES.join(", ")}) instead of the API key. Needed for user filters such as in-Waitlist. Default: API key.`
+      );
+  }
+
+  return schema;
 }
 
-function buildEndpointMetadata() {
-  return ENDPOINTS.map((endpoint) => ({
+function buildEndpointMetadata(endpoints) {
+  return endpoints.map((endpoint) => ({
     ...endpoint,
+    internal: isInternalEndpoint(endpoint),
     requiredPathParams: REQUIRED_PATH_PARAMS[endpoint.tool] ?? [],
     requiredQueryParams: REQUIRED_QUERY_PARAMS[endpoint.tool] ?? [],
     requiredHeaders: REQUIRED_HEADER_PARAMS[endpoint.tool] ?? [],
@@ -432,19 +504,27 @@ function buildCallingGuideMarkdown(metadata) {
   const lines = [
     "# IsThereAnyDeal MCP Calling Guide",
     "",
-    "This server maps each ITAD OpenAPI operation to a dedicated MCP tool (63 total). No generic API call tool is provided.",
+    `This server maps each ITAD OpenAPI operation to a dedicated MCP tool (${metadata.length} registered; ${ENDPOINTS.length} defined). No generic API call tool is provided.`,
+    INTERNAL_TOOLS_ENABLED
+      ? `Internal tools (/internal/*) are ENABLED via ${INTERNAL_TOOLS_ENV_NAME}. ITAD documents them as available only for its own services.`
+      : `Internal tools (/internal/*) are hidden. Set ${INTERNAL_TOOLS_ENV_NAME}=true to register them.`,
     "",
     "## Unified Input Fields",
     "- pathParams: path parameter object",
     "- query: query parameter object",
     "- headers: request headers object",
     "- body: request body (required for some endpoints)",
-    "- oauthToken: OAuth token (OAuth endpoints only)",
+    "- oauthToken: OAuth token (oauth and key_or_oauth endpoints)",
+    "- useOAuth: boolean (key_or_oauth endpoints only) — authenticate with OAuth instead of the API key",
     "",
     "## Authentication",
-    `- key: API key injected automatically from env vars ${API_KEY_ENV_NAMES.join(", ")}`,
-    `- oauth: uses oauthToken param or env vars ${OAUTH_TOKEN_ENV_NAMES.join(", ")}`,
-    "- optional_key: API key injected if present",
+    `- key: API key sent automatically as the ${API_KEY_HEADER} header, from env vars ${API_KEY_ENV_NAMES.join(", ")}`,
+    `- oauth: Authorization: Bearer token from the oauthToken param or env vars ${OAUTH_TOKEN_ENV_NAMES.join(", ")}`,
+    "- key_or_oauth: API key by default; OAuth when useOAuth=true or oauthToken is passed (or when no API key is set). OAuth enables user filters (in Waitlist / in Collection)",
+    "- none: no auth",
+    "",
+    "## Errors",
+    "- 429 Too Many Requests: the error text includes ITAD's Retry-After value. ITAD's documented limit is 1000 requests per 5-minute window; cache results where possible.",
     "",
     "## Endpoint List",
   ];
@@ -474,10 +554,11 @@ function buildCallingGuideMarkdown(metadata) {
 
 const server = new McpServer({
   name: "itad-mcp",
-  version: "0.2.0",
+  version: PACKAGE_VERSION,
 });
 
-const endpointMetadata = buildEndpointMetadata();
+const ACTIVE_ENDPOINTS = ENDPOINTS.filter((endpoint) => INTERNAL_TOOLS_ENABLED || !isInternalEndpoint(endpoint));
+const endpointMetadata = buildEndpointMetadata(ACTIVE_ENDPOINTS);
 const callingGuideMarkdown = buildCallingGuideMarkdown(endpointMetadata);
 
 server.registerResource(
@@ -504,7 +585,7 @@ server.registerResource(
   "itad://endpoints/index.json",
   {
     title: "ITAD MCP Endpoint Index",
-    description: "Machine-readable metadata for all 63 MCP tools",
+    description: `Machine-readable metadata for the ${ACTIVE_ENDPOINTS.length} registered MCP tools`,
     mimeType: "application/json",
   },
   async () => ({
@@ -518,18 +599,18 @@ server.registerResource(
   })
 );
 
-for (const endpoint of ENDPOINTS) {
+for (const endpoint of ACTIVE_ENDPOINTS) {
   server.tool(
     endpoint.tool,
     buildToolDescription(endpoint),
     buildToolInputSchema(endpoint),
-    async ({ pathParams = {}, query = {}, headers = {}, body, oauthToken }) => {
+    async ({ pathParams = {}, query = {}, headers = {}, body, oauthToken, useOAuth }) => {
       try {
         ensureRequiredValues(endpoint.tool, { pathParams, query, headers, body });
 
         const finalQuery = { ...query };
         const finalHeaders = { ...headers };
-        applyAuth(endpoint, finalQuery, finalHeaders, oauthToken);
+        applyAuth(endpoint, finalHeaders, { oauthToken, useOAuth });
         const finalPath = resolvePath(endpoint.path, pathParams);
         const data = await itadRequest(finalPath, {
           method: endpoint.method,
