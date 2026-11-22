@@ -26,9 +26,8 @@ Each tool validates required parameters automatically for its corresponding endp
 
 ### Documentation
 
-Full calling documentation (auth, response format, examples, required params per tool):
-
-- [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md)
+- **[Full tool list](./docs/CALLING_GUIDE.md#6-full-tool-list-with-required-parameters)**: all 65 tools with method, path, auth and required parameters
+- [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md): full calling documentation (auth, safety annotations, response format, examples, common errors)
 
 The server also exposes two MCP Resources so agents that can't read repository files still have access to calling information:
 
@@ -171,7 +170,7 @@ The server loads credentials from the `.env` file in the project root automatica
 
 ## Security
 
-- **Tool safety annotations.** Every tool declares MCP annotations: `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`. Clients that honor them can ask before risky calls. 43 tools are read-only. 8 make additive account changes, such as adding to the waitlist. 14 are destructive: every delete, plus updates that overwrite data, profile syncs and `webhooks_add_v1`. Write and destructive tools also carry a warning in their description. The full breakdown is in [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md#3-tool-safety-annotations).
+- **Tool safety annotations.** Every tool declares MCP annotations: `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`. Clients that honor them can ask before risky calls. Of the 65 tools, 43 are read-only (35 of them registered by default, plus the 8 opt-in internal tools). 8 make additive account changes, such as adding to the waitlist. 14 are destructive: every delete, plus updates that overwrite data, profile syncs and `webhooks_add_v1`. Write and destructive tools also carry a warning in their description. The full breakdown is in [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md#3-tool-safety-annotations).
 - **Prompt injection.** Tool results contain third-party text: game titles, giveaway descriptions, your own notes. Text like that could try to steer the agent into calling a write tool. The riskiest is `webhooks_add_v1`, which would send your ITAD notifications to whatever URL it's given. If your client lets you, require approval for non-read-only tools. Don't give an agent your OAuth token if it only needs prices and deals.
 - **Credentials stay out of URLs.** The API key is sent as the `ITAD-API-Key` header. Any `key` query param a caller passes is dropped.
 - **Prefer env vars for the OAuth token.** Tools accept an `oauthToken` argument, but anything passed that way is visible in the conversation transcript and client logs. Set `ITAD_OAUTH_TOKEN` instead.
@@ -208,77 +207,6 @@ ITAD_ENABLE_INTERNAL_TOOLS=true
 - **Shared rate limit.** Every call, including failed ones, counts against your app's limit (1000 requests per 5 minutes for verified accounts).
 - **More tools for the agent.** Eight extra tools enlarge the tool list your AI client loads and may tempt the agent to call them instead of the supported endpoints.
 
-## Full Tool List (65 operations: 57 registered by default + 8 internal, opt-in)
+## Tool List
 
-Auth per tool is listed in [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md). `deals_v2` and `deals_post_v2` accept either the API key or an OAuth token.
-
-### Registered by default (57)
-
-- `bundles_v1` -> GET /bundles/v1
-- `collection_copies_v1_delete` -> DELETE /collection/copies/v1
-- `collection_copies_v1_get` -> GET /collection/copies/v1
-- `collection_copies_v1_patch` -> PATCH /collection/copies/v1
-- `collection_copies_v1_post` -> POST /collection/copies/v1
-- `collection_games_v1_delete` -> DELETE /collection/games/v1
-- `collection_games_v1_get` -> GET /collection/games/v1
-- `collection_games_v1_put` -> PUT /collection/games/v1
-- `collection_groups_v1_delete` -> DELETE /collection/groups/v1
-- `collection_groups_v1_get` -> GET /collection/groups/v1
-- `collection_groups_v1_patch` -> PATCH /collection/groups/v1
-- `collection_groups_v1_post` -> POST /collection/groups/v1
-- `deals_post_v2` -> POST /deals/v2
-- `deals_v2` -> GET /deals/v2
-- `games_bundles_v2` -> GET /games/bundles/v2
-- `games_giveaways_v1` -> GET /games/giveaways/v1
-- `games_history_v2` -> GET /games/history/v2
-- `games_historylow_v1` -> POST /games/historylow/v1
-- `games_info_v2` -> GET /games/info/v2
-- `games_lookup_v1` -> GET /games/lookup/v1
-- `games_overview_v2` -> POST /games/overview/v2
-- `games_prices_v3` -> POST /games/prices/v3
-- `games_search_v1` -> GET /games/search/v1
-- `games_storelow_v2` -> POST /games/storelow/v2
-- `games_subscriptions_v1` -> POST /games/subs/v1
-- `giveaways_v1` -> GET /giveaways/v1
-- `ignored_games_v1_delete` -> DELETE /ignored/games/v1
-- `ignored_games_v1_get` -> GET /ignored/games/v1
-- `ignored_games_v1_put` -> PUT /ignored/games/v1
-- `lookup_gid_shopid_v1` -> POST /lookup/id/shop/{shopId}/v1
-- `lookup_gid_title_v1` -> POST /lookup/id/title/v1
-- `lookup_shopid_gid_v1` -> POST /lookup/shop/{shopId}/id/v1
-- `notifications_list_v1_get` -> GET /notifications/v1
-- `notifications_read_all_v1_put` -> PUT /notifications/read/all/v1
-- `notifications_read_v1_put` -> PUT /notifications/read/v1
-- `notifications_waitlist_v1_get` -> GET /notifications/waitlist/v1
-- `profiles_link_v1_delete` -> DELETE /profiles/link/v1
-- `profiles_link_v1_put` -> PUT /profiles/link/v1
-- `profiles_sync_collection_v1_put` -> PUT /profiles/sync/collection/v1
-- `profiles_sync_waitlist_v1_put` -> PUT /profiles/sync/waitlist/v1
-- `service_shops_map_v1` -> GET /service/shops/map/v1
-- `service_shops_v1` -> GET /service/shops/v1
-- `stats_most_collected_v1` -> GET /stats/most-collected/v1
-- `stats_most_popular_v1` -> GET /stats/most-popular/v1
-- `stats_most_waitlisted_v1` -> GET /stats/most-waitlisted/v1
-- `stats_waitlist_v1` -> GET /stats/waitlist/v1
-- `unstable_games_dots_v1` -> GET /unstable/games/dots/v1
-- `unstable_games_list_v1` -> GET /unstable/games/list/v1
-- `user_info_v2` -> GET /user/info/v2
-- `user_notes_v1_delete` -> DELETE /user/notes/v1
-- `user_notes_v1_get` -> GET /user/notes/v1
-- `user_notes_v1_put` -> PUT /user/notes/v1
-- `waitlist_games_v1_delete` -> DELETE /waitlist/games/v1
-- `waitlist_games_v1_get` -> GET /waitlist/games/v1
-- `waitlist_games_v1_put` -> PUT /waitlist/games/v1
-- `webhooks_add_v1` -> PUT /webhooks/v1
-- `webhooks_delete_v1` -> DELETE /webhooks/v1
-
-### Internal, only with `ITAD_ENABLE_INTERNAL_TOOLS=true` (8)
-
-- `internal_earlyaccess_v1` -> GET /internal/early-access/v1
-- `internal_exfgls_v1` -> GET /internal/exfgls/v1
-- `internal_hltb_v1` -> GET /internal/hltb/v1
-- `internal_players_v1` -> GET /internal/players/v1
-- `internal_rates_v1` -> GET /internal/rates/v1
-- `internal_reviews_v1` -> GET /internal/reviews/v1
-- `internal_twitchstream_v1` -> GET /internal/twitch/stream/v1
-- `internal_wsgf_v1` -> GET /internal/wsgf/v1
+The server defines 65 tools, one per ITAD API operation: 57 are registered by default and the 8 internal tools are opt-in (see [Internal endpoints](#internal-endpoints-opt-in)). The full list, with method, path, auth and required parameters for each tool, is in [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md#6-full-tool-list-with-required-parameters). A running server also lists every registered tool in the `itad://endpoints/index.json` resource.

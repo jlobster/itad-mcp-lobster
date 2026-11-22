@@ -53,7 +53,7 @@ MCP Client → tool call → ensureRequiredValues() → applyAuth() → itadRequ
 
 | `auth` value | Behavior |
 |---|---|
-| `"key"` | API Key required; injected as `?key=` query param |
+| `"key"` | API Key required; sent as the `ITAD-API-Key` header, never in the URL |
 | `"key_or_oauth"` | API Key by default; OAuth when `useOAuth: true` or `oauthToken` is passed, or when no key is set. Used by `deals_v2` / `deals_post_v2` (OAuth enables user filters) |
 | `"oauth"` | OAuth Bearer token required; `oauthToken` input param takes priority over env var |
 | `"none"` | No auth |
@@ -66,7 +66,13 @@ All changes flow from the `ENDPOINTS` array plus the four constraint collections
 3. If the body is required, add the tool name to `BODY_REQUIRED_TOOLS`
 4. Classify it for the MCP safety annotations: GETs are read-only automatically. A POST that only queries goes in `READ_ONLY_NON_GET_TOOLS`. DELETEs are destructive automatically; any other write that overwrites, replaces or sends account data off-site goes in `DESTRUCTIVE_NON_DELETE_TOOLS`. A write that creates duplicates when repeated goes in `NON_IDEMPOTENT_WRITE_TOOLS`. Getting this wrong means clients won't ask the user before a risky call
 
-No other registration code is needed — the loop handles the rest. If the tool count changes, update the counts in this file, `README.md` (including its generated tool list) and `docs/CALLING_GUIDE.md`. The calling-guide resource and the server version (`package.json`) are computed at runtime.
+No other registration code is needed — the loop handles the rest. If the tool set changes, update every place that states counts or lists tools:
+- `docs/CALLING_GUIDE.md`: the intro count, the safety-annotation counts (section 3) and the full tool list (section 6, the only complete list)
+- `README.md`: the Design Principles count, the Documentation link to the tool list, the safety-annotation counts (Security section), the internal-tools table and the Tool List section
+- This file: the Architecture count and the internal-tools count under Environment variables
+- `.env.example`: the internal-tools count
+
+The calling-guide resource and the server version (`package.json`) are computed at runtime.
 
 When syncing with a newer ITAD spec, diff `dist/openapi.json` from <https://github.com/isthereanydeal/api> against `ENDPOINTS` (method, path, `operationId` = tool name with `-` → `_`, security, required params), and read its `CHANGELOG.md`.
 
