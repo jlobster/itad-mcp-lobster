@@ -37,6 +37,7 @@ The server also exposes two MCP Resources so agents that can't read repository f
 ## Requirements
 
 - Node.js 18+
+- [pnpm](https://pnpm.io/installation) (recommended) or npm (bundled with Node.js)
 - IsThereAnyDeal API Key (register at <https://isthereanydeal.com/apps/my/>)
 
 ## Installation
@@ -44,9 +45,11 @@ The server also exposes two MCP Resources so agents that can't read repository f
 ```bash
 git clone https://github.com/jlobster/itad-mcp.git
 cd itad-mcp
-npm install
+pnpm install
 pwd   # copy this path — you'll need it for the MCP client config
 ```
+
+Using npm instead? Replace `pnpm install` with `npm install`.
 
 ## Credentials
 
@@ -108,10 +111,12 @@ icacls .env /inheritance:r /grant:r "${env:USERNAME}:(R)"
 ## Starting the Server
 
 ```bash
-npm start
+pnpm start
 ```
 
-The server communicates with MCP clients over stdio.
+With npm: `npm start`. Either one runs `node src/index.js`. To run the package's `itad-mcp` command from the repo, use `pnpm exec itad-mcp` (or `npx itad-mcp` with npm).
+
+The server communicates with MCP clients over stdio. You normally don't start it by hand: your MCP client launches it using the config below.
 
 ## MCP Client Configuration Example
 
