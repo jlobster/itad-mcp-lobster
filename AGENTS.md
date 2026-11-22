@@ -66,7 +66,7 @@ All changes flow from the `ENDPOINTS` array plus the four constraint collections
 3. If the body is required, add the tool name to `BODY_REQUIRED_TOOLS`
 4. Classify it for the MCP safety annotations: GETs are read-only automatically. A POST that only queries goes in `READ_ONLY_NON_GET_TOOLS`. DELETEs are destructive automatically; any other write that overwrites, replaces or sends account data off-site goes in `DESTRUCTIVE_NON_DELETE_TOOLS`. A write that creates duplicates when repeated goes in `NON_IDEMPOTENT_WRITE_TOOLS`. Getting this wrong means clients won't ask the user before a risky call
 
-No other registration code is needed — the loop handles the rest. If the tool count changes, update the counts in this file, `README.md` (including its generated tool list) and `docs/CALLING_GUIDE.md`. The calling-guide resource and the server version (`package.json`) are computed at runtime.
+No other registration code is needed — the loop handles the rest. If the tool count changes, update the counts in this file, `README.md` and `docs/CALLING_GUIDE.md` (its section 6 is the only full tool list). The calling-guide resource and the server version (`package.json`) are computed at runtime.
 
 When syncing with a newer ITAD spec, diff `dist/openapi.json` from <https://github.com/isthereanydeal/api> against `ENDPOINTS` (method, path, `operationId` = tool name with `-` → `_`, security, required params), and read its `CHANGELOG.md`.
 
