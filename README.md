@@ -26,9 +26,8 @@ Each tool validates required parameters automatically for its corresponding endp
 
 ### Documentation
 
-Full calling documentation (auth, response format, examples, required params per tool):
-
-- [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md)
+- **[Full tool list](./docs/CALLING_GUIDE.md#6-full-tool-list-with-required-parameters)**: all 65 tools with method, path, auth and required parameters
+- [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md): full calling documentation (auth, safety annotations, response format, examples, common errors)
 
 The server also exposes two MCP Resources so agents that can't read repository files still have access to calling information:
 
@@ -171,7 +170,7 @@ The server loads credentials from the `.env` file in the project root automatica
 
 ## Security
 
-- **Tool safety annotations.** Every tool declares MCP annotations: `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`. Clients that honor them can ask before risky calls. 43 tools are read-only. 8 make additive account changes, such as adding to the waitlist. 14 are destructive: every delete, plus updates that overwrite data, profile syncs and `webhooks_add_v1`. Write and destructive tools also carry a warning in their description. The full breakdown is in [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md#3-tool-safety-annotations).
+- **Tool safety annotations.** Every tool declares MCP annotations: `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`. Clients that honor them can ask before risky calls. Of the 65 tools, 43 are read-only (35 of them registered by default, plus the 8 opt-in internal tools). 8 make additive account changes, such as adding to the waitlist. 14 are destructive: every delete, plus updates that overwrite data, profile syncs and `webhooks_add_v1`. Write and destructive tools also carry a warning in their description. The full breakdown is in [docs/CALLING_GUIDE.md](./docs/CALLING_GUIDE.md#3-tool-safety-annotations).
 - **Prompt injection.** Tool results contain third-party text: game titles, giveaway descriptions, your own notes. Text like that could try to steer the agent into calling a write tool. The riskiest is `webhooks_add_v1`, which would send your ITAD notifications to whatever URL it's given. If your client lets you, require approval for non-read-only tools. Don't give an agent your OAuth token if it only needs prices and deals.
 - **Credentials stay out of URLs.** The API key is sent as the `ITAD-API-Key` header. Any `key` query param a caller passes is dropped.
 - **Prefer env vars for the OAuth token.** Tools accept an `oauthToken` argument, but anything passed that way is visible in the conversation transcript and client logs. Set `ITAD_OAUTH_TOKEN` instead.

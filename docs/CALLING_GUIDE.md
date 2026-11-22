@@ -59,7 +59,7 @@ Every tool carries MCP annotations that clients can use to ask for confirmation:
 - **Write** (`readOnlyHint: false`, `destructiveHint: false`, 8 tools): additive changes, e.g. `waitlist_games_v1_put`, `collection_games_v1_put`, `collection_copies_v1_post`, `notifications_read_v1_put`
 - **Destructive** (`destructiveHint: true`, 14 tools): every DELETE, plus `collection_copies_v1_patch`, `collection_groups_v1_patch`, `user_notes_v1_put`, `profiles_sync_collection_v1_put`, `profiles_sync_waitlist_v1_put` and `webhooks_add_v1`, which sends the user's notifications to an external URL
 
-All tools have `openWorldHint: true`, since they call the ITAD API. Counts include the internal tools, which are all read-only.
+All tools have `openWorldHint: true`, since they call the ITAD API. Counts include the 8 internal tools, which are all read-only: with the default registration, 35 tools are read-only.
 
 ## 4. Response and Error Format
 
@@ -194,7 +194,7 @@ required: `query.id`
 
 ## 6. Full Tool List with Required Parameters
 
-### Bundles / Deals / Games / Lookup / Service / Stats / Internal / Unstable (API Key / none)
+### Bundles / Deals / Games / Lookup / Service / Stats / Internal / Unstable (API Key, API Key or OAuth, none)
 
 | tool | method | path | auth | required |
 |---|---|---|---|---|
