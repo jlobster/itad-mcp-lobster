@@ -148,7 +148,9 @@ icacls .env /inheritance:r /grant:r "${env:USERNAME}:(R)"
 pnpm start
 ```
 
-With npm: `npm start`. Either one runs `node src/index.js`. To run the package's `itad-mcp` command from the repo, use `pnpm exec itad-mcp` (or `npx itad-mcp` with npm).
+With npm: `npm start`. Either one runs `node src/index.js`.
+
+> Don't use `npx itad-mcp`. The npm package name `itad-mcp` belongs to a different, unrelated project, so npx would download and run that package instead of this repo. Point your MCP client at `src/index.js` as shown below.
 
 The server communicates with MCP clients over stdio. You normally don't start it by hand: your MCP client launches it using the config below.
 
