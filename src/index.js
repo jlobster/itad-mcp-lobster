@@ -123,6 +123,14 @@ const REQUIRED_QUERY_PARAMS = {
   stats_waitlist_v1: ["id"],
 };
 
+// Query values filled in when the caller omits them. The spec marks `country` optional
+// (default "US"), but the live /deals/v2 endpoint answers 400 "Missing data for 'country'"
+// without it (verified 2026-11-23; the other country-taking endpoints apply the default).
+const QUERY_DEFAULTS = {
+  deals_post_v2: { country: "US" },
+  deals_v2: { country: "US" },
+};
+
 const REQUIRED_HEADER_PARAMS = {
   profiles_link_v1_delete: ["ITAD-Profile"],
   profiles_sync_collection_v1_put: ["ITAD-Profile"],
@@ -515,7 +523,9 @@ function buildToolDescription(endpoint) {
     ? " INTERNAL: ITAD documents this endpoint as available only for its own services; expect it to be rejected or to change without notice."
     : "";
   const requiredText = required.length ? `Required: ${required.join(" | ")}` : "No additional required parameters";
-  return `[${endpoint.method}] ${endpoint.path} - ${endpoint.summary}. ${requiredText}. ${authHint}.${safetyNote}${internalNote} Read the itad://guide/calling resource for full usage documentation.`;
+  const defaults = Object.entries(QUERY_DEFAULTS[endpoint.tool] ?? {}).map(([name, value]) => `query.${name}="${value}"`);
+  const defaultsText = defaults.length ? ` Defaults when omitted: ${defaults.join(", ")}.` : "";
+  return `[${endpoint.method}] ${endpoint.path} - ${endpoint.summary}. ${requiredText}.${defaultsText} ${authHint}.${safetyNote}${internalNote} Read the itad://guide/calling resource for full usage documentation.`;
 }
 
 function buildNamedObjectSchema(requiredKeys, valueSchema, description) {
@@ -704,6 +714,11 @@ for (const endpoint of ACTIVE_ENDPOINTS) {
         ensureRequiredValues(endpoint.tool, { pathParams, query, headers, body });
 
         const finalQuery = { ...query };
+        for (const [name, value] of Object.entries(QUERY_DEFAULTS[endpoint.tool] ?? {})) {
+          if (finalQuery[name] === undefined || finalQuery[name] === null || finalQuery[name] === "") {
+            finalQuery[name] = value;
+          }
+        }
         stripCredentialQueryParams(finalQuery);
         const finalHeaders = { ...headers };
         applyAuth(endpoint, finalHeaders, { oauthToken, useOAuth });

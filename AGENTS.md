@@ -79,6 +79,7 @@ When syncing with a newer ITAD spec, diff `dist/openapi.json` from <https://gith
 ### Special cases
 
 - `games_info_v2`: `query.id` must be a single string, not an array (enforced explicitly in `ensureRequiredValues`)
+- `deals_v2` / `deals_post_v2`: the spec marks `country` optional (default `US`), but the live API returns 400 `Missing data for 'country'` without it. `QUERY_DEFAULTS` fills in `country: "US"` when the caller omits it; the tool description advertises the default. The other country-taking endpoints apply the default themselves (checked 2026-11-23)
 - `internal_exfgls_v1`: GET request with a required body — uses raw `node:https` to bypass fetch's restriction
 - Query arrays are serialized as comma-joined strings (e.g. `?id=a,b,c`), not repeated params (matches the spec's `explode: false` arrays)
 - `/internal/*` tools are opt-in: ITAD documents them as available only for its own services. Keep them gated; the README lists the risks

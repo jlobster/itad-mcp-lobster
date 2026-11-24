@@ -20,7 +20,7 @@ All tools share the same input schema:
 Field descriptions:
 
 - `pathParams`: Path parameters, e.g. `shopId` in `/lookup/id/shop/{shopId}/v1`
-- `query`: Query string parameters. A `key` param is always dropped; the API key is sent as a header
+- `query`: Query string parameters. A `key` param is always dropped; the API key is sent as a header. `deals_v2` and `deals_post_v2` get `country: "US"` when you omit it (the live API rejects those calls without a country); pass another two-letter code to override
 - `headers`: Request headers (e.g. `ITAD-Profile`)
 - `body`: Request body (object or array)
 - `oauthToken`: OAuth token (`oauth` and `key_or_oauth` endpoints). Prefer the environment variable: a token passed here is visible in the conversation transcript and client logs
